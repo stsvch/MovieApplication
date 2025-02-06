@@ -2,7 +2,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
 }
+
 
 android {
     namespace = "com.example.movieapplication"
@@ -58,4 +60,12 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     implementation ("androidx.navigation:navigation-compose:2.8.6")
+    implementation(platform("com.google.firebase:firebase-bom:33.8.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
+    implementation("io.coil-kt:coil-compose:2.2.2")
+    implementation("androidx.hilt:hilt-navigation-fragment:1.0.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.5")
 }
