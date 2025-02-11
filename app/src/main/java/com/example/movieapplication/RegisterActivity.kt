@@ -56,9 +56,7 @@ fun RegisterScreen(
     var email by remember { mutableStateOf(TextFieldValue("")) }
     var password by remember { mutableStateOf(TextFieldValue("")) }
 
-    // Форматируем текущую дату регистрации
     val regDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-    // Дефолтный URL фото-заглушки (указывайте прямую ссылку на изображение)
     val defaultPhotoUrl = "https://ibb.co/q3b835dC"
 
     Box(
@@ -103,7 +101,6 @@ fun RegisterScreen(
                                 if (task.isSuccessful) {
                                     val userId = auth.currentUser?.uid
                                     if (userId != null) {
-                                        // Сохраняем базовые данные в коллекцию "users"
                                         val userData = hashMapOf(
                                             "name" to name.text,
                                             "email" to email.text
@@ -111,7 +108,6 @@ fun RegisterScreen(
                                         db.collection("users").document(userId)
                                             .set(userData)
                                             .addOnSuccessListener {
-                                                // Сохраняем расширенные данные в коллекцию "userInfo"
                                                 val userInfoData = hashMapOf(
                                                     "about" to "",
                                                     "phone" to "",

@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -41,12 +42,10 @@ class MainActivity : ComponentActivity() {
         FirebaseApp.initializeApp(this)
         val auth = FirebaseAuth.getInstance()
         if (auth.currentUser?.reload() == null) {
-
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
             return
         }
-
         enableEdgeToEdge()
         setContent {
             MovieApplicationTheme {
@@ -61,7 +60,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun BottomNav(innerPadding: androidx.compose.foundation.layout.PaddingValues) {
     val navController: NavHostController = rememberNavController()
-    // выбранный экран (строка маршрута)
     val selected = remember { mutableStateOf(Screens.List.screen) }
 
     Scaffold(
@@ -69,7 +67,7 @@ fun BottomNav(innerPadding: androidx.compose.foundation.layout.PaddingValues) {
             BottomAppBar(containerColor = Pink40) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceEvenly,
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(
@@ -141,11 +139,17 @@ fun BottomNav(innerPadding: androidx.compose.foundation.layout.PaddingValues) {
             startDestination = Screens.List.screen,
             modifier = Modifier.padding(paddingValues)
         ) {
-            composable(Screens.List.screen) { List() }
+            composable(Screens.List.screen) {
+
+                MovieListScreen(navController = navController)
+            }
             composable(Screens.Search.screen) { Search() }
             composable(Screens.Favorite.screen) { Favorite() }
-            // Здесь используется обновлённая версия экрана профиля
             composable(Screens.Profile.screen) { Profile() }
+            composable(Screens.MovieDetail.screen) { backStackEntry ->
+                val movieId = backStackEntry.arguments?.getString("movieId") ?: ""
+                MovieDetailScreen(movieId = movieId)
+            }
         }
     }
 }

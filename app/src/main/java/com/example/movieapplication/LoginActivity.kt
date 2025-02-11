@@ -22,7 +22,6 @@ import com.example.movieapplication.ui.theme.Pink40
 import com.google.firebase.auth.FirebaseAuth
 
 class LoginActivity : ComponentActivity() {
-    // Получаем экземпляр FirebaseAuth
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,23 +29,18 @@ class LoginActivity : ComponentActivity() {
         setContent {
             LoginScreen(
                 onSignUpClick = {
-                    // Запуск активности регистрации (предварительно созданной RegisterActivity)
                     val intent = Intent(this, RegisterActivity::class.java)
                     startActivity(intent)
                 },
                 onSignInClick = { email, password ->
-                    // Попытка входа с помощью Firebase Auth
                     auth.signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener { task ->
                             if (task.isSuccessful) {
-                                // Вход выполнен успешно
                                 Toast.makeText(this, "Login Successful", Toast.LENGTH_SHORT).show()
-                                // Переход на следующее Activity (например, MainScreenActivity)
                                 val intent = Intent(this, MainActivity::class.java)
                                 startActivity(intent)
-                                finish() // Закрываем LoginActivity
+                                finish()
                             } else {
-                                // Ошибка авторизации, показываем сообщение
                                 Toast.makeText(
                                     this,
                                     task.exception?.message ?: "Authentication failed",
@@ -81,7 +75,6 @@ fun LoginScreen(onSignUpClick: () -> Unit, onSignInClick: (String, String) -> Un
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Поле ввода Email
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -91,7 +84,6 @@ fun LoginScreen(onSignUpClick: () -> Unit, onSignInClick: (String, String) -> Un
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Поле ввода пароля
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -114,7 +106,6 @@ fun LoginScreen(onSignUpClick: () -> Unit, onSignInClick: (String, String) -> Un
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Кнопка регистрации
             TextButton(onClick = onSignUpClick) {
                 Text(text = "Don't have an account? Sign Up", color = Pink40)
             }

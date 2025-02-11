@@ -67,5 +67,10 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.10.0")
     implementation("io.coil-kt:coil-compose:2.2.2")
     implementation("androidx.hilt:hilt-navigation-fragment:1.0.0")
+    implementation ("com.google.accompanist:accompanist-pager:0.32.0")
+    implementation ("com.google.accompanist:accompanist-pager-indicators:0.32.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.5")
+    implementation ("androidx.compose.foundation:foundation:1.5.4")
+    implementation ("androidx.paging:paging-compose:3.2.1")
+
 }

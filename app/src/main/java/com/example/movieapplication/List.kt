@@ -2,17 +2,7 @@ package com.example.movieapplication
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -26,10 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,76 +25,67 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.movieapplication.Factory.MovieListViewModelFactory
+import com.example.movieapplication.Model.Movie
+import com.example.movieapplication.Repository.MovieRepository
+import com.example.movieapplication.ViewModel.MovieListViewModel
 import com.example.movieapplication.ui.theme.Pink40
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlin.math.min
 
-data class Movie(
-    val id: String = "",
-    val title: String = "",
-    val description: String = "",
-    val photoLinks: List<String> = emptyList(),
-    val genres: List<String> = emptyList(),
-    val year: Int = 0
-)
-
-
 @Composable
-fun List() {
-    val db = FirebaseFirestore.getInstance()
-    val movies = remember { mutableStateOf(listOf<Movie>()) }
-    val genreMapping = remember { mutableStateOf<Map<String, String>>(emptyMap()) }
-    val isLoading = remember { mutableStateOf(true) }
-    val currentPage = remember { mutableStateOf(1) }
-    val moviesPerPage = 10
+fun MovieListScreen(
+    navController: NavHostController,
+    genreFilter: String? = null,
+    yearFilter: Int? = null,
+    // При желании можно передать ViewModel извне для тестирования
+    viewModel: MovieListViewModel = viewModel(
+        factory = MovieListViewModelFactory(MovieRepository(FirebaseFirestore.getInstance()))
+    )
+) {
+    // Получаем состояния из ViewModel
+    val movies by viewModel.movies
+    val genreMapping by viewModel.genreMapping
+    val isLoading by viewModel.isLoading
 
-    LaunchedEffect(Unit) {
-        db.collection("movies").get()
-            .addOnSuccessListener { querySnapshot ->
-                val movieList = querySnapshot.documents.map { doc ->
-                    Movie(
-                        id = doc.id,
-                        title = doc.getString("title") ?: "",
-                        description = doc.getString("description") ?: "",
-                        photoLinks = doc.get("photoLinks") as? List<String> ?: emptyList(),
-                        genres = doc.get("genres") as? List<String> ?: emptyList(),
-                        year = doc.getLong("year")?.toInt() ?: 0
-                    )
-                }
-                movies.value = movieList
-                isLoading.value = false
-            }
-            .addOnFailureListener {
-                isLoading.value = false
-            }
+    // Если фильтры изменились, можно вызвать повторную загрузку данных.
+    LaunchedEffect(genreFilter, yearFilter) {
+        viewModel.loadMovies(genreFilter, yearFilter)
     }
 
-    LaunchedEffect(Unit) {
-        db.collection("genres").get()
-            .addOnSuccessListener { querySnapshot ->
-                val mapping = querySnapshot.documents.associate { doc ->
-                    val id = doc.id
-                    val name = doc.getString("name") ?: ""
-                    id to name
-                }
-                genreMapping.value = mapping
-            }
-    }
-
-    if (isLoading.value) {
+    if (isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
-        return
+    } else {
+        MovieList(
+            movies = movies,
+            genreMapping = genreMapping,
+            onItemClick = { movie ->
+                navController.navigate("movie_detail/${movie.id}")
+            }
+        )
     }
+}
 
-    val totalMovies = movies.value.size
+@Composable
+fun MovieList(
+    movies: List<Movie>,
+    genreMapping: Map<String, String>,
+    onItemClick: (Movie) -> Unit,
+    moviesPerPage: Int = 10
+) {
+    val currentPage = remember { mutableStateOf(1) }
+    val totalMovies = movies.size
     val totalPages = if (totalMovies > 0) ((totalMovies - 1) / moviesPerPage) + 1 else 1
     val startIndex = (currentPage.value - 1) * moviesPerPage
     val endIndex = min(startIndex + moviesPerPage, totalMovies)
-    val currentMovies = movies.value.subList(startIndex, endIndex)
+    val currentMovies = movies.subList(startIndex, endIndex)
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -117,12 +95,12 @@ fun List() {
                 .padding(bottom = 56.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            itemsIndexed(currentMovies) { index, movie ->
-                MovieItem(movie = movie, genreMapping = genreMapping.value, onClick = {
-                    //
-                    //
-                    //
-                })
+            itemsIndexed(currentMovies) { _, movie ->
+                MovieItem(
+                    movie = movie,
+                    genreMapping = genreMapping,
+                    onClick = { onItemClick(movie) }
+                )
             }
         }
         Row(
@@ -136,7 +114,7 @@ fun List() {
             if (currentPage.value > 1) {
                 IconButton(onClick = { currentPage.value-- }) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.Filled.ArrowBack,
                         contentDescription = "Previous Page",
                         tint = Pink40
                     )
@@ -148,7 +126,7 @@ fun List() {
             if (currentPage.value < totalPages) {
                 IconButton(onClick = { currentPage.value++ }) {
                     Icon(
-                        imageVector = Icons.Default.ArrowForward,
+                        imageVector = Icons.Filled.ArrowForward,
                         contentDescription = "Next Page",
                         tint = Pink40
                     )
@@ -207,4 +185,3 @@ fun MovieItem(movie: Movie, genreMapping: Map<String, String>, onClick: () -> Un
         }
     }
 }
-
