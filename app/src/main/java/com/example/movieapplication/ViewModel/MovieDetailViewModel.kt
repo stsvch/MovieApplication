@@ -1,11 +1,13 @@
 package com.example.movieapplication.ViewModel
 
 import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.movieapplication.Model.Movie
 import com.example.movieapplication.Model.Review
+import com.example.movieapplication.Model.UserData
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -35,6 +37,9 @@ class MovieDetailViewModel(
 
     private val _reviewText = mutableStateOf("")
     val reviewText: State<String> = _reviewText
+
+    private val _userCache = mutableStateMapOf<String, UserData>()
+    val userCache: Map<String, UserData> get() = _userCache
 
     init {
         loadMovieDetails()
@@ -77,7 +82,7 @@ class MovieDetailViewModel(
             .addOnSuccessListener { query ->
                 _reviews.value = query.documents.map { doc ->
                     Review(
-                        userId = doc.getString("user") ?: "",
+                        user = doc.getString("user") ?: "",
                         text = doc.getString("text") ?: ""
                     )
                 }
@@ -128,6 +133,7 @@ class MovieDetailViewModel(
                         scoresRef.document(doc.id).update("score", newRating)
                     }
                 }
+
                 scoresRef
                     .whereEqualTo("movie", movieId)
                     .get()
@@ -157,11 +163,25 @@ class MovieDetailViewModel(
             .add(reviewData)
             .addOnSuccessListener {
                 _reviews.value = _reviews.value + Review(
-                    userId = uid,
+                    user = uid,
                     text = _reviewText.value
                 )
                 _reviewText.value = ""
                 _showReviewInput.value = false
+            }
+    }
+
+    fun loadUserData(userId: String) {
+        if (_userCache.containsKey(userId)) return
+
+        db.collection("users").document(userId).get()
+            .addOnSuccessListener { doc ->
+                val name = if (doc.exists()) doc.getString("name") ?: "User" else "User"
+                db.collection("userInfo").document(userId).get()
+                    .addOnSuccessListener { doc2 ->
+                        val photoUrl = if (doc2.exists()) doc2.getString("photoUrl") ?: "" else ""
+                        _userCache[userId] = UserData(name, photoUrl)
+                    }
             }
     }
 }

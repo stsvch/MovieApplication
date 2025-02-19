@@ -39,6 +39,8 @@ class MovieListViewModel(
     }
 
     private fun loadGenres() {
+        if (_genreMapping.value.isNotEmpty()) return
+
         FirebaseFirestore.getInstance().collection("genres").get()
             .addOnSuccessListener { querySnapshot ->
                 val mapping = querySnapshot.documents.associate { doc ->

@@ -25,8 +25,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -37,15 +37,21 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
+    private lateinit var auth: FirebaseAuth
+    private lateinit var authListener: FirebaseAuth.AuthStateListener
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
-        val auth = FirebaseAuth.getInstance()
-        if (auth.currentUser?.reload() == null) {
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
-            return
+        auth = FirebaseAuth.getInstance()
+
+        authListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+            if (firebaseAuth.currentUser == null) {
+                startActivity(Intent(this, LoginActivity::class.java))
+                finish()
+            }
         }
+
         enableEdgeToEdge()
         setContent {
             MovieApplicationTheme {
@@ -54,6 +60,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        auth.addAuthStateListener(authListener)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        auth.removeAuthStateListener(authListener)
     }
 }
 
@@ -140,15 +156,19 @@ fun BottomNav(innerPadding: androidx.compose.foundation.layout.PaddingValues) {
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(Screens.List.screen) {
-
                 MovieListScreen(navController = navController)
             }
-            composable(Screens.Search.screen) { Search() }
-            composable(Screens.Favorite.screen) { Favorite() }
-            composable(Screens.Profile.screen) { Profile() }
+            composable(Screens.Search.screen) {
+                Search(navController = navController)
+            }
+            composable(Screens.Favorite.screen) { Favorite(navController = navController) }
+            composable(Screens.Profile.screen) { Profile(navController = navController) }
             composable(Screens.MovieDetail.screen) { backStackEntry ->
                 val movieId = backStackEntry.arguments?.getString("movieId") ?: ""
                 MovieDetailScreen(movieId = movieId)
+            }
+            composable(Screens.UserReviews.screen) {
+                UserReviewsScreen()
             }
         }
     }

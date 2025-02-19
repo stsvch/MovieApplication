@@ -152,7 +152,11 @@ fun MovieDetailScreen(movieId: String) {
             )
         }
         items(reviews) { review ->
-            ReviewItem(review = review)
+            LaunchedEffect(review.user) {
+                viewModel.loadUserData(review.user)
+            }
+            val userData = viewModel.userCache[review.user]
+            ReviewItem(review = review, userData = userData)
         }
     }
 }
@@ -235,59 +239,3 @@ fun InteractiveRatingBar(
     }
 }
 
-@Composable
-fun ReviewItem(review: Review) {
-    var userName by remember { mutableStateOf("Anonymous") }
-    var userPhotoUrl by remember { mutableStateOf("") }
-    val db = FirebaseFirestore.getInstance()
-
-    LaunchedEffect(review.userId) {
-        db.collection("users").document(review.userId).get()
-            .addOnSuccessListener { doc ->
-                if (doc.exists()) {
-                    userName = doc.getString("name") ?: "Anonymous"
-                }
-            }
-        db.collection("userInfo").document(review.userId).get()
-            .addOnSuccessListener { doc ->
-                if (doc.exists()) {
-                    userPhotoUrl = doc.getString("photoUrl") ?: ""
-                }
-            }
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (userPhotoUrl.isNotEmpty()) {
-                AsyncImage(
-                    model = userPhotoUrl,
-                    contentDescription = "Reviewer Photo",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Default User Photo",
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape),
-                    tint = Color.Gray
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Column {
-                Text(text = userName, fontSize = 14.sp, color = Pink40)
-                Text(text = review.text, fontSize = 14.sp)
-            }
-        }
-    }
-}

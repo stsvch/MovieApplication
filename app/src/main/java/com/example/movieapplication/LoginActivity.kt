@@ -94,7 +94,6 @@ fun LoginScreen(onSignUpClick: () -> Unit, onSignInClick: (String, String) -> Un
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Кнопка входа
             Button(
                 onClick = { onSignInClick(email.text, password.text) },
                 colors = ButtonDefaults.buttonColors(containerColor = Pink40),

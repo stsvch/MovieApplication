@@ -32,9 +32,8 @@ class RegisterActivity : ComponentActivity() {
             RegisterScreen(
                 onRegisterSuccess = {
                     Toast.makeText(this, "Registration Successful", Toast.LENGTH_SHORT).show()
-                    // Переход на MainActivity после успешной регистрации и сохранения данных
                     startActivity(Intent(this, MainActivity::class.java))
-                    finish() // Закрываем RegisterActivity
+                    finish()
                 },
                 onRegisterFail = { message ->
                     Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
@@ -113,7 +112,7 @@ fun RegisterScreen(
                                                     "phone" to "",
                                                     "birthday" to "",
                                                     "gender" to "",
-                                                    "favoriteGenre" to "",
+                                                    "favoriteGenre" to emptyArray<String>(),
                                                     "reviewCount" to "0",
                                                     "regDate" to regDate,
                                                     "photoUrl" to defaultPhotoUrl

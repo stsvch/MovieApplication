@@ -1,6 +1,6 @@
 package com.example.movieapplication
 
-import android.graphics.BitmapFactory
+import android.widget.Toast
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.GetContent
@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,89 +25,34 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.example.movieapplication.ViewModel.ProfileViewModel
 import com.example.movieapplication.ui.theme.Pink40
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import java.text.SimpleDateFormat
+import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun Profile() {
-    val auth = FirebaseAuth.getInstance()
-    val db = FirebaseFirestore.getInstance()
-    val userId = auth.currentUser?.uid
+fun Profile(navController: NavHostController) {
+    val viewModel: ProfileViewModel = viewModel()
+    val profile by viewModel.profile
+    val isLoading by viewModel.isLoading
+    val isEditing by viewModel.isEditing
+    val isUploading by viewModel.isUploading
+    val genresList by viewModel.genresList
     val context = LocalContext.current
 
-    var isLoading by remember { mutableStateOf(true) }
-    var isEditing by remember { mutableStateOf(false) }
-    var isUploading by remember { mutableStateOf(false) }
+    var selectedGenreIds by remember { mutableStateOf(profile.favoriteGenres) }
 
-    var name by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-
-    var about by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var birthday by remember { mutableStateOf("") }
-
-    var gender by remember { mutableStateOf("") }
-    var favoriteGenre by remember { mutableStateOf("") }
-    var reviewCount by remember { mutableStateOf("0") }
-    var regDate by remember { mutableStateOf("") }
-    var photoUrl by remember { mutableStateOf("") }
-
-    val darkPink = Color(0xFFAD1457)
-
-    val imagePickerLauncher = rememberLauncherForActivityResult(contract = GetContent()) { uri: Uri? ->
+    val imagePickerLauncher = rememberLauncherForActivityResult(GetContent()) { uri: Uri? ->
         uri?.let {
             val bitmap = loadBitmapFromUri(context, it)
             bitmap?.let { bmp ->
-                isUploading = true
-                val base64Image = bitmapToBase64(bmp)
-
-                uploadImageToImgBB(base64Image, "50245cd843c0c88936aeb23dda809ff0",
-                    onSuccess = { newUrl ->
-                        photoUrl = newUrl
-                        if (userId != null) {
-                            db.collection("userInfo").document(userId).update("photoUrl", newUrl)
-                        }
-                        isUploading = false
-                    },
-                    onError = { errorMsg ->
-                        isUploading = false
-                    }
-                )
+                viewModel.uploadPhoto(bmp)
             }
-        }
-    }
-
-    LaunchedEffect(userId) {
-        if (userId != null) {
-            db.collection("users").document(userId).get()
-                .addOnSuccessListener { document ->
-                    if (document != null && document.exists()) {
-                        name = document.getString("name") ?: ""
-                        email = document.getString("email") ?: ""
-                    }
-                }
-            db.collection("userInfo").document(userId).get()
-                .addOnSuccessListener { document ->
-                    if (document != null && document.exists()) {
-                        about = document.getString("about") ?: ""
-                        phone = document.getString("phone") ?: ""
-                        birthday = document.getString("birthday") ?: ""
-                        gender = document.getString("gender") ?: ""
-                        favoriteGenre = document.getString("favoriteGenre") ?: ""
-                        reviewCount = document.getString("ReviewCount") ?: "0"
-                        regDate = document.getString("regDate") ?: ""
-                        photoUrl = document.getString("photoUrl") ?: ""
-                    }
-                    isLoading = false
-                }
-                .addOnFailureListener {
-                    isLoading = false
-                }
-        } else {
-            isLoading = false
         }
     }
 
@@ -124,14 +70,13 @@ fun Profile() {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(context)
-                    .data(if (photoUrl.isNotEmpty()) photoUrl else null)
+                    .data(if (profile.photoUrl.isNotEmpty()) profile.photoUrl else "https://via.placeholder.com/120")
                     .crossfade(true)
                     .build(),
                 contentDescription = "User Photo",
@@ -165,22 +110,13 @@ fun Profile() {
             Text(text = "User Profile", fontSize = 24.sp, color = Pink40)
             IconButton(onClick = {
                 if (isEditing) {
-
-                    val data = hashMapOf(
-                        "about" to about,
-                        "phone" to phone,
-                        "birthday" to birthday,
-                        "gender" to gender,
-                        "favoriteGenre" to favoriteGenre,
-                        "ReviewCount" to reviewCount,
-                        "regDate" to regDate,
-                        "photoUrl" to photoUrl
-                    )
-                    if (userId != null) {
-                        db.collection("userInfo").document(userId).update(data as Map<String, Any>)
+                    viewModel.updateFavoriteGenres(selectedGenreIds)
+                    viewModel.saveProfile { errorMsg ->
+                        Toast.makeText(context, errorMsg, Toast.LENGTH_SHORT).show()
                     }
+                } else {
+                    viewModel.toggleEditing()
                 }
-                isEditing = !isEditing
             }) {
                 Icon(
                     imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
@@ -190,66 +126,133 @@ fun Profile() {
             }
         }
 
-        ProfileField(label = "Name", value = name, onValueChange = { }, isEditable = false)
-        ProfileField(label = "Email", value = email, onValueChange = { }, isEditable = false)
-        ProfileField(label = "About", value = about, onValueChange = { about = it }, isEditable = isEditing)
-        ProfileField(label = "Phone", value = phone, onValueChange = { phone = it }, isEditable = isEditing)
-        ProfileField(label = "Birthday", value = birthday, onValueChange = { birthday = it }, isEditable = isEditing)
+        ProfileField(label = "Name", value = profile.name, onValueChange = { }, isEditable = false)
+        ProfileField(label = "Email", value = profile.email, onValueChange = { }, isEditable = false)
+
+        ProfileField(label = "About", value = profile.about, onValueChange = { viewModel.updateAbout(it) }, isEditable = isEditing)
+        ProfileField(label = "Phone", value = profile.phone, onValueChange = { newPhone ->
+            viewModel.updatePhone(newPhone)
+        }, isEditable = isEditing)
+
+        ProfileField(label = "Birthday", value = profile.birthday, onValueChange = { newBirthday ->
+            viewModel.updateBirthday(newBirthday)
+        }, isEditable = isEditing)
 
         Text(text = "Gender", fontSize = 14.sp, color = Color.Gray)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
+            val maleModifier = if (isEditing) Modifier.clickable { viewModel.updateGender("M") } else Modifier
             Text(
                 text = "M",
                 fontSize = 16.sp,
-                modifier = Modifier
-                    .clickable { gender = "M" }
-                    .background(if (gender == "M") Pink40 else Color.Transparent)
+                modifier = maleModifier
+                    .background(if (profile.gender == "M") Color.Blue else Color.Transparent)
                     .padding(8.dp),
-                color = if (gender == "M") Color.White else Color.Black
+                color = if (profile.gender == "M") Color.White else Color.Black
             )
-
+            val femaleModifier = if (isEditing) Modifier.clickable { viewModel.updateGender("F") } else Modifier
             Text(
                 text = "F",
                 fontSize = 16.sp,
-                modifier = Modifier
-                    .clickable { gender = "F" }
-                    .background(if (gender == "F") Pink40 else Color.Transparent)
+                modifier = femaleModifier
+                    .background(if (profile.gender == "F") Pink40 else Color.Transparent)
                     .padding(8.dp),
-                color = if (gender == "F") Color.White else Color.Black
+                color = if (profile.gender == "F") Color.White else Color.Black
             )
         }
 
-        ProfileField(label = "Favorite Genre", value = favoriteGenre, onValueChange = { favoriteGenre = it }, isEditable = isEditing)
-        ProfileField(label = "Registration Date", value = regDate, onValueChange = { }, isEditable = false)
+        if (isEditing) {
+            var showGenreDialog by remember { mutableStateOf(false) }
+
+            LaunchedEffect(genresList) {
+                println("Genres list updated: ${genresList.size} items")
+                genresList.forEach { println("Genre: ${it.id} - ${it.name}") }
+            }
+
+            Column {
+                Text("Select favorite genres:", color = Color.Gray)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    genresList.forEach { genre ->
+                        val isSelected = selectedGenreIds.contains(genre.id)
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = {
+                                selectedGenreIds = if (isSelected) {
+                                    selectedGenreIds - genre.id
+                                } else {
+                                    selectedGenreIds + genre.id
+                                }
+                            },
+                            label = { Text(genre.name) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Pink40,
+                                selectedLabelColor = Color.White
+                            )
+                        )
+                    }
+                }
+            }
+        } else {
+            val favoriteGenresNames = genresList
+                .filter { genre -> profile.favoriteGenres.contains(genre.id) }
+                .joinToString(", ") { it.name }
+
+            ProfileField(
+                label = "Favorite Genres",
+                value = favoriteGenresNames,
+                onValueChange = { },
+                isEditable = false
+            )
+        }
+
+        ProfileField(label = "Registration Date", value = profile.regDate, onValueChange = { }, isEditable = false)
 
         Text(
-            text = "Reviews: $reviewCount",
+            text = "Reviews: ${profile.reviewCount}",
             fontSize = 16.sp,
             color = Pink40,
             textDecoration = TextDecoration.Underline,
             modifier = Modifier.clickable {
-                //
-                //
-                //
+                navController.navigate(Screens.UserReviews.screen)
             }
         )
 
         Button(
             onClick = {
-                FirebaseAuth.getInstance().signOut()
-                //
-                //
-                //
+                viewModel.signOut()
+                navController.navigate("login") {
+                    popUpTo("login") { inclusive = true }
+                }
             },
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = darkPink)
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFAD1457))
         ) {
             Text(text = "Sign Out", color = Color.White)
         }
+
+        Button(
+            onClick = {
+                viewModel.deleteAccount { success ->
+                    if (success) {
+                        navController.navigate("login") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    } else {
+                        Toast.makeText(context, "Account deletion error", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+        ) {
+            Text(text = "Delete account", color = Color.White)
+        }
+
     }
 }
 
