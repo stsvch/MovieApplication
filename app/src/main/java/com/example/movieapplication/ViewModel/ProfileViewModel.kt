@@ -27,10 +27,6 @@ class ProfileViewModel(
     private val _genresList = mutableStateOf(listOf<Genre>())
     val genresList: State<List<Genre>> = _genresList
 
-    fun updateFavoriteGenres(newGenres: List<String>) {
-        _profile.value = _profile.value.copy(favoriteGenres = newGenres)
-    }
-
     init {
         loadProfile()
         loadGenres()
@@ -84,7 +80,6 @@ class ProfileViewModel(
         }
     }
 
-
     fun updateAbout(newAbout: String) {
         _profile.value = _profile.value.copy(about = newAbout)
     }
@@ -102,14 +97,12 @@ class ProfileViewModel(
             onSuccess = { genres ->
                 _genresList.value = genres
             },
-            onFailure = {
-            }
+            onFailure = { }
         )
     }
 
     fun signOut() {
-        repository.signOut {
-        }
+        repository.signOut { }
     }
 
     fun deleteAccount(onResult: (Boolean) -> Unit) {
@@ -118,9 +111,12 @@ class ProfileViewModel(
         }
     }
 
-
     fun updateGender(newGender: String) {
         _profile.value = _profile.value.copy(gender = newGender)
+    }
+
+    fun updateFavoriteGenres(newGenres: List<String>) {
+        _profile.value = _profile.value.copy(favoriteGenres = newGenres)
     }
 
     fun uploadPhoto(bitmap: Bitmap) {
@@ -129,8 +125,6 @@ class ProfileViewModel(
             if (newPhotoUrl.isNotEmpty()) {
                 _profile.value = _profile.value.copy(photoUrl = newPhotoUrl)
                 repository.updateUserProfile(_profile.value) { success ->
-                    if (!success) {
-                    }
                 }
             }
             _isUploading.value = false

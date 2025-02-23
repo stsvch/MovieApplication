@@ -72,5 +72,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.5")
     implementation ("androidx.compose.foundation:foundation:1.5.4")
     implementation ("androidx.paging:paging-compose:3.2.1")
+    implementation("androidx.room:room-runtime:2.5.0")
+    implementation("androidx.room:room-ktx:2.5.0")
 
 }

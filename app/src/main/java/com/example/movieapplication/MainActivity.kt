@@ -2,6 +2,7 @@ package com.example.movieapplication
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -27,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -35,15 +37,90 @@ import com.example.movieapplication.ui.theme.MovieApplicationTheme
 import com.example.movieapplication.ui.theme.Pink40
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+
+data class Moviedb(
+    val actors: List<String> = emptyList(),
+    val category: String = "",
+    val title: String = "",
+    val description: String = "",
+    val directors: List<String> = emptyList(),
+    val duration : Int = 0,
+    val photoLinks: List<String> = emptyList(),
+    val genres: List<String> = emptyList(),
+    val year: Int = 0
+)
 
 class MainActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var authListener: FirebaseAuth.AuthStateListener
 
+    fun fillFirestoreCollections() {
+        val db = FirebaseFirestore.getInstance()
+       val movie1 = Moviedb(
+            actors = listOf("71", "72", "73", "74", "75", "76", "77", "78", "79", "80"),
+            category = "movie",
+            description = "1942, Great Britain. They are the best of the best. Inveterate adventurers and first-class specialists who are used to acting alone. But when the fate of the entire world is at stake, they must team up in a top-secret combat unit and embark on a daring mission against the Nazis. Now their business is war, and they will conduct it in a completely ungentlemanly way.",
+            directors = listOf("8"),
+            duration = 119,
+            genres = listOf("5", "7", "10", "11"),
+            photoLinks = listOf(
+                "https://i.ibb.co/HLn4CmJ2/2025-02-11-00-01-24.png",
+            ),
+            title = "The Ministry of Ungentlemanly Warfare",
+            year = 2024
+        )
+
+        db.collection("movies").document("16").set(movie1)
+        val movie2 = Moviedb(
+            actors = listOf("71", "72", "73", "74", "75", "76", "77", "78", "79", "80"),
+            category = "movie",
+            description = "1942, Great Britain. They are the best of the best. Inveterate adventurers and first-class specialists who are used to acting alone. But when the fate of the entire world is at stake, they must team up in a top-secret combat unit and embark on a daring mission against the Nazis. Now their business is war, and they will conduct it in a completely ungentlemanly way.",
+            directors = listOf("8"),
+            duration = 119,
+            genres = listOf("5", "7", "10", "11"),
+            photoLinks = listOf(
+                "https://i.ibb.co/HLn4CmJ2/2025-02-11-00-01-24.png",
+            ),
+            title = "The Ministry of Ungentlemanly Warfare",
+            year = 2024
+        )
+
+        db.collection("movies").document("16").set(movie2)
+        val movie = Moviedb(
+            actors = listOf("71", "72", "73", "74", "75", "76", "77", "78", "79", "80"),
+            category = "movie",
+            description = "1942, Great Britain. They are the best of the best. Inveterate adventurers and first-class specialists who are used to acting alone. But when the fate of the entire world is at stake, they must team up in a top-secret combat unit and embark on a daring mission against the Nazis. Now their business is war, and they will conduct it in a completely ungentlemanly way.",
+            directors = listOf("8"),
+            duration = 119,
+            genres = listOf("5", "7", "10", "11"),
+            photoLinks = listOf(
+                "https://i.ibb.co/HLn4CmJ2/2025-02-11-00-01-24.png",
+            ),
+            title = "The Ministry of Ungentlemanly Warfare",
+            year = 2024
+        )
+
+        db.collection("movies").document("16").set(movie)
+
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
         auth = FirebaseAuth.getInstance()
+        lifecycleScope.launch(Dispatchers.IO) {
+            PhotoCacheManager.preloadAllPhotos()
+        }
+        val firestore = FirebaseFirestore.getInstance()
+        val settings = FirebaseFirestoreSettings.Builder()
+            .setPersistenceEnabled(true)
+            .build()
+        firestore.firestoreSettings = settings
 
         authListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
             if (firebaseAuth.currentUser == null) {
@@ -51,7 +128,11 @@ class MainActivity : ComponentActivity() {
                 finish()
             }
         }
-
+        /*
+        lifecycleScope.launch(Dispatchers.IO) {
+            fillFirestoreCollections()
+        }
+*/
         enableEdgeToEdge()
         setContent {
             MovieApplicationTheme {
@@ -72,6 +153,8 @@ class MainActivity : ComponentActivity() {
         auth.removeAuthStateListener(authListener)
     }
 }
+
+
 
 @Composable
 fun BottomNav(innerPadding: androidx.compose.foundation.layout.PaddingValues) {

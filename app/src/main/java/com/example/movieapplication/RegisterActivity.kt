@@ -112,11 +112,12 @@ fun RegisterScreen(
                                                     "phone" to "",
                                                     "birthday" to "",
                                                     "gender" to "",
-                                                    "favoriteGenre" to emptyArray<String>(),
-                                                    "reviewCount" to "0",
+                                                    "favoriteGenres" to emptyList<String>(),
+                                                    "ReviewCount" to 0,
                                                     "regDate" to regDate,
                                                     "photoUrl" to defaultPhotoUrl
                                                 )
+
                                                 db.collection("userInfo").document(userId)
                                                     .set(userInfoData)
                                                     .addOnSuccessListener {

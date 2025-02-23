@@ -43,17 +43,14 @@ fun MovieListScreen(
     navController: NavHostController,
     genreFilter: String? = null,
     yearFilter: Int? = null,
-    // При желании можно передать ViewModel извне для тестирования
     viewModel: MovieListViewModel = viewModel(
         factory = MovieListViewModelFactory(MovieRepository(FirebaseFirestore.getInstance()))
     )
 ) {
-    // Получаем состояния из ViewModel
     val movies by viewModel.movies
     val genreMapping by viewModel.genreMapping
     val isLoading by viewModel.isLoading
 
-    // Если фильтры изменились, можно вызвать повторную загрузку данных.
     LaunchedEffect(genreFilter, yearFilter) {
         viewModel.loadMovies(genreFilter, yearFilter)
     }

@@ -1,4 +1,4 @@
-// ReviewItem.kt (можно вынести в отдельный файл)
+
 package com.example.movieapplication
 
 import androidx.compose.material3.Card
@@ -28,7 +28,7 @@ fun ReviewItem(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
@@ -38,7 +38,7 @@ fun ReviewItem(
             if (userData?.photoUrl?.isNotEmpty() == true) {
                 AsyncImage(
                     model = userData.photoUrl,
-                    contentDescription = "https://ibb.co/q3b835dC",
+                    contentDescription = "User Photo",
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
@@ -46,7 +46,7 @@ fun ReviewItem(
             } else {
                 Icon(
                     imageVector = Icons.Default.Person,
-                    contentDescription = "https://ibb.co/q3b835dC",
+                    contentDescription = "User Photo",
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape),

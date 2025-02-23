@@ -1,5 +1,7 @@
 package com.example.movieapplication
 
+import android.app.Activity
+import android.content.Intent
 import android.widget.Toast
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -225,9 +227,8 @@ fun Profile(navController: NavHostController) {
         Button(
             onClick = {
                 viewModel.signOut()
-                navController.navigate("login") {
-                    popUpTo("login") { inclusive = true }
-                }
+                context.startActivity(Intent(context, LoginActivity::class.java))
+                (context as? Activity)?.finish()
             },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFAD1457))
@@ -239,11 +240,10 @@ fun Profile(navController: NavHostController) {
             onClick = {
                 viewModel.deleteAccount { success ->
                     if (success) {
-                        navController.navigate("login") {
-                            popUpTo("login") { inclusive = true }
-                        }
+                        context.startActivity(Intent(context, LoginActivity::class.java))
+                        (context as? Activity)?.finish()
                     } else {
-                        Toast.makeText(context, "Account deletion error", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Account deletion error. Please reauthenticate.", Toast.LENGTH_SHORT).show()
                     }
                 }
             },
